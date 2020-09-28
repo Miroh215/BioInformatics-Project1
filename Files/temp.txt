@@ -1,0 +1,24 @@
+A,Alanine
+R,Arginine
+N,Asparagine
+D,Aspartic acid (Aspartate)
+C,Cysteine
+Q,Glutamine
+E,Glutamic acid (Glutamate)
+G,Glycine
+H,Histidine
+I,Isoleucine
+L,Leucine
+K,Lysine
+M,Methionine
+F,Phenylalanine
+P,Proline
+S,Serine
+T,Threonine
+W,Tryptophan
+Y,Tyrosine
+V,Valine
+B,Aspartic acid or Asparagine
+Z,Glutamine or Glutamic acid.
+X,Any amino acid.
+termination codon
