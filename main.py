@@ -87,7 +87,7 @@ def get_files():
 def extract_string(file):
     with open(file, 'r') as f:
         lines = f.readlines()
-        out_string = lines[1]
+        out_string = lines[1].strip()
     return out_string
 
 
@@ -107,6 +107,74 @@ def extract_matrix(file):
 
 def get_score(mat: dict, o: list, combo: tuple):
     return mat[combo[0]][o.index(combo[1])]
+
+
+def semiglobal_align(string1, string2, mat, o, gap_pen):
+    grid = [[None for x in range(len(string1) + 1)] for y in range(len(string2) + 1)]
+    grid[0][0] = (0, 's')
+
+    for i in range(1 ,len(string1)+1):
+        grid[0][i] = (0, 'e')
+
+    for i in range(1, len(string2)+1):
+        grid[i][0] = (0, 'e')
+
+    for x in range(len(string2)):
+        for y in range(len(string1)):
+            score = get_score(mat, o, (string1[y], string2[x]))
+            best = max(grid[x][y][0] + score, grid[x+1][y][0] + gap_pen, grid[x][y+1][0] + gap_pen)
+            if best == score + grid[x][y][0]:
+                grid[x+1][y+1] = (best, 'd')
+            elif best == grid[x+1][y][0] + gap_pen:
+                grid[x+1][y+1] = (best, 'v')
+            else:
+                grid[x+1][y+1] = (best, 'h')
+
+    for item in grid:
+        out = ''
+        for place in item:
+            out += f'{place[0]:>8} '
+        print(out)
+
+    return grid
+
+
+def semiglobal_backtrack(table, string1, string2):
+    len1 = len(string1)
+    len2 = len(string2)
+    seq1 = ''
+    seq2 = ''
+    path = ''
+    current = table[len2][len1]
+    score = current[0]
+
+    while current[1] != 's':
+        if current[0] <= 0:
+            break
+        if current[1] == 'd':
+            seq1 = string1[len1 - 1] + seq1
+            seq2 = string2[len2 - 1] + seq2
+            len1 -= 1
+            len2 -= 1
+            path = 'D' + path
+        elif current[1] == 'h':
+            seq1 = '-' + seq1
+            seq2 = string2[len2 - 1] + seq2
+            len2 -= 1
+            path = 'H' + path
+        elif current[1] == 'v':
+            seq1 = string1[len1 - 1] + seq1
+            seq2 = '-' + seq2
+            len1 -= 1
+            path = 'V' + path
+        current = table[len2][len1]
+
+    print(f"Alignment score: {score}")
+    print(f"Forward path is: {path}")
+
+    print("Aligned sequences:")
+    print(seq1)
+    print(seq2)
 
 
 def global_align(string1, string2, mat, o, gap_pen):
@@ -144,32 +212,117 @@ def global_backtrack(table, string1, string2):
     len2 = len(string2)
     seq1 = ''
     seq2 = ''
+    path = ''
     current = table[len2][len1]
     score = current[0]
 
     while current[1] != 's':
         if current[1] == 'd':
-            print(len1)
             seq1 = string1[len1-1] + seq1
             seq2 = string2[len2-1] + seq2
             len1 -= 1
             len2 -= 1
+            path = 'D' + path
         elif current[1] == 'h':
-            seq1 = string1[len1-1] + seq1
-            seq2 = '-' + seq2
-            len1 -= 1
-        elif current[1] == 'v':
             seq1 = '-' + seq1
             seq2 = string2[len2-1] + seq2
             len2 -= 1
+            path = 'H' + path
+        elif current[1] == 'v':
+            seq1 = string1[len1 - 1] + seq1
+            seq2 = '-' + seq2
+            len1 -= 1
+            path = 'V' + path
         current = table[len2][len1]
 
     print(f"Alignment score: {score}")
-    print(f"Forward path is: ")
+    print(f"Forward path is: {path}")
 
     print("Aligned sequences:")
     print(seq1)
     print(seq2)
+
+
+def local_align(string1, string2, mat, o, gap_pen):
+    grid = [[None for x in range(len(string1) + 1)] for y in range(len(string2) + 1)]
+    grid[0][0] = (0, 's')
+
+    for i in range(1, len(string1) + 1):
+        grid[0][i] = (0, 'h')
+
+    for i in range(1, len(string2) + 1):
+        grid[i][0] = (0, 'v')
+
+    for x in range(len(string2)):
+        for y in range(len(string1)):
+            score = get_score(mat, o, (string1[y], string2[x]))
+            best = max(grid[x][y][0] + score, grid[x + 1][y][0] + gap_pen, grid[x][y + 1][0] + gap_pen)
+            if best == score + grid[x][y][0]:
+                if best < 0:
+                    best = 0
+                grid[x + 1][y + 1] = (best, 'd')
+            elif best == grid[x + 1][y][0] + gap_pen:
+                if best < 0:
+                    best = 0
+                grid[x + 1][y + 1] = (best, 'v')
+            else:
+                if best < 0:
+                    best = 0
+                grid[x + 1][y + 1] = (best, 'h')
+
+    for item in grid:
+        out = ''
+        for place in item:
+            out += f'{place[0]:>8} '
+        print(out)
+
+    return grid
+
+
+def local_backtrack(table, string1, string2):
+    max_n = 0
+    for i in range(len(table)):
+        for j in range(len(table[0])):
+            if table[i][j][0] > max_n:
+                max_n = table[i][j][0]
+                placement = (i, j)
+
+    len1 = placement[0]
+    len2 = placement[1]
+    seq1 = ''
+    seq2 = ''
+    path = ''
+    current = table[placement[0]][placement[1]]
+    score = current[0]
+
+    while current[1] != 's':
+        if current[0] == 0:
+            break
+        if current[1] == 'd':
+            seq1 = string1[len1 - 1] + seq1
+            seq2 = string2[len2 - 1] + seq2
+            len1 -= 1
+            len2 -= 1
+            path = 'D' + path
+        elif current[1] == 'h':
+            seq1 = '-' + seq1
+            seq2 = string2[len2 - 1] + seq2
+            len2 -= 1
+            path = 'H' + path
+        elif current[1] == 'v':
+            seq1 = string1[len1 - 1] + seq1
+            seq2 = '-' + seq2
+            len1 -= 1
+            path = 'V' + path
+        current = table[len2][len1]
+
+    print(f"Alignment score: {score}")
+    print(f"Forward path is: {path}")
+
+    print("Aligned sequences:")
+    print(seq1)
+    print(seq2)
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
@@ -181,8 +334,15 @@ if __name__ == "__main__":
         print(s2)
         matrix, order = extract_matrix("Files/BLOSUM62.txt")
         gap = int(input("Enter the gap penalty: "))
-        grid = global_align(s1,s2,matrix, order, gap)
-        global_backtrack(grid, s1, s2)
+        print("Starting...\n")
+        grid = local_align(s1, s2, matrix, order, gap)
+        local_backtrack(grid, s1, s2)
+        # semiglobal_backtrack(grid, s1, s2)
+
+        # grid = semiglobal_align(s1, s2, matrix, order, gap)
+        # semiglobal_backtrack(grid, s1, s2)
+        # grid = global_align(s1, s2, matrix, order, gap)
+        # global_backtrack(grid, s1, s2)
         # print(get_score(matrix, order, ("A", "C")))
         # print(get_score(matrix, order, ("C", "A")))
         # print(get_score(matrix, order, ("Y", "E")))
@@ -203,8 +363,13 @@ if __name__ == "__main__":
 
         alignment = input("What type of alignment do you wish to use?\nGlobal, Local, Semi-Global (g, l, or s)? ").strip()[0]
         gap = int(input("Enter the gap penalty: "))
-        print("\n")
+        print("Starting...\n")
 
         if alignment.lower() == "g":
             grid = global_align(s1, s2, matrix, order, gap)
+            global_backtrack(grid, s1, s2)
+        elif alignment.lower() == "s":
+            grid = semiglobal_align(s1, s2, matrix, order, gap)
+            semiglobal_backtrack(grid, s1, s2)
+
 
