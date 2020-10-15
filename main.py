@@ -359,6 +359,12 @@ if __name__ == "__main__":
         if form.lower() == "n":
             s1 = translation(s1)
             s2 = translation(s2)
+            print("\n\n")
+            print("Translated sequences:")
+            print(s1)
+            print(s2)
+            print("\n\n")
+
         matrix, order = extract_matrix(mat_file)
 
         alignment = input("What type of alignment do you wish to use?\nGlobal, Local, Semi-Global (g, l, or s)? ").strip()[0]
@@ -371,5 +377,11 @@ if __name__ == "__main__":
         elif alignment.lower() == "s":
             grid = semiglobal_align(s1, s2, matrix, order, gap)
             semiglobal_backtrack(grid, s1, s2)
+        elif alignment.lower() == "l":
+            grid = local_align(s1, s2,matrix, order, gap)
+            local_backtrack(grid, s1, s2)
+        else:
+            print("That is not a valid input.")
+            exit()
 
 
