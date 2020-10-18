@@ -2,7 +2,7 @@
 Author: Marcus Underwood
 Class: CS490 Bioinformatics
 Assignment: Project 1
-Date: 10/14/2020
+Date: 10/14/2020 
 """
 
 
